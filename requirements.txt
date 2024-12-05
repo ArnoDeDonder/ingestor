@@ -1,0 +1,6 @@
+python-dotenv
+pandas
+psycopg2-binary
+pyyaml
+SQLAlchemy
+thundertools
