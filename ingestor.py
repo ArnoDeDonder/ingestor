@@ -47,7 +47,7 @@ def main():
     if len(sys.argv) != 2:
         print("usage: python ingest.py <source_file>")
         sys.exit(1)
-    source_file = 'data/' + sys.argv[1]
+    source_file = 'data/' + sys.argv[1] + '.csv'
     config = load_config(source_file)
     validate_csv(source_file, config)
     df = pd.read_csv(source_file, sep=config['delimiter'], quoting=3 if not config['quoted'] else 1)
