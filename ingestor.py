@@ -50,15 +50,21 @@ def main():
     source_file = 'data/' + sys.argv[1] + '.csv'
     config = load_config(source_file)
     validate_csv(source_file, config)
-    df = pd.read_csv(source_file, sep=config['delimiter'], quoting=3 if not config['quoted'] else 1)
-    df = df.replace('\xa0', ' ', regex=True)
+    total_rows = sum(1 for _ in open(source_file)) - 1  # -1 for header
+    print(f'found {total_rows} rows')
     engine = get_db_engine()
     table_name = f"{os.getenv('DB_SCHEMA')}.{config['table_name']}"
-    total_rows = len(df)
-    for i in citer(range(0, total_rows, config['chunk_size'])):
-        chunk = df.iloc[i:i + config['chunk_size']]
-        chunk.to_sql(config['table_name'], engine, schema=os.getenv('DB_SCHEMA'), 
-                     if_exists='append' if i > 0 else 'replace', index=False)
+    first_chunk = True
+    loaded_rows = 0
+    for chunk in pd.read_csv(source_file, sep=config['delimiter'],
+                             quoting=3 if not config['quoted'] else 1,
+                             chunksize=config['chunk_size']):
+        chunk = chunk.replace('\xa0', ' ', regex=True)
+        chunk.to_sql(config['table_name'], engine, schema=os.getenv('DB_SCHEMA'),
+                     if_exists='replace' if first_chunk else 'append', index=False)
+        first_chunk = False
+        loaded_rows += len(chunk)
+
     with engine.connect() as conn:
         result = conn.execute(text(f"SELECT COUNT(*) FROM {table_name}"))
         db_count = result.scalar()
