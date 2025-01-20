@@ -63,7 +63,7 @@ def main():
                              quoting=3 if not config['quoted'] else 1,
                              chunksize=config['chunk_size'],
                              dtype=str):
-        chunk = chunk.replace('\xa0', ' ', regex=True)
+        chunk = chunk.replace('\xa0', ' ', regex=True).infer_objects(copy=False)
         chunk.to_sql(
             config['table_name'],
             engine,
