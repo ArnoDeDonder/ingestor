@@ -1,5 +1,7 @@
 import os
 import sys
+
+import sqlalchemy
 import yaml
 import pandas as pd
 from dotenv import load_dotenv
@@ -56,12 +58,20 @@ def main():
     table_name = f"{os.getenv('DB_SCHEMA')}.{config['table_name']}"
     first_chunk = True
     loaded_rows = 0
-    for chunk in pd.read_csv(source_file, sep=config['delimiter'],
+    for chunk in pd.read_csv(source_file,
+                             sep=config['delimiter'],
                              quoting=3 if not config['quoted'] else 1,
-                             chunksize=config['chunk_size']):
+                             chunksize=config['chunk_size'],
+                             dtype=str):
         chunk = chunk.replace('\xa0', ' ', regex=True)
-        chunk.to_sql(config['table_name'], engine, schema=os.getenv('DB_SCHEMA'),
-                     if_exists='replace' if first_chunk else 'append', index=False)
+        chunk.to_sql(
+            config['table_name'],
+            engine,
+            schema=os.getenv('DB_SCHEMA'),
+            if_exists='replace' if first_chunk else 'append',
+            index=False,
+            dtype={col: sqlalchemy.types.Text for col in chunk.columns}
+        )
         first_chunk = False
         loaded_rows += len(chunk)
 
